@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pocket CRM</title>
+<meta name="description" content="A pocket CRM for commercial real estate brokers. Your data stays on your phone.">
+<meta name="theme-color" content="#E9EDF2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#080D17" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pocket CRM">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="fonts/fonts.css">
+<style>
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+/* Layout: one-column phone app. Blueprint-grid hero, a "pipeline tower" where each floor is a deal stage
+   and each lit window is a live deal, mono figures for SF / cap / $, sheets slide up for detail. */
+:root{
+  --paper:#E9EDF2; --surface:#FFFFFF; --surface2:#F3F6F9; --ink:#0C1726; --muted:#56647A; --line:#D3DAE3;
+  --blue:#1E48C9; --blue-ink:#FFFFFF; --blue-soft:#E1E8FB; --grid:rgba(30,72,201,.10);
+  --brass:#9A6B12; --brass-soft:#F6ECD6; --brass-lit:#E9B44C;
+  --red:#B42318; --red-soft:#FCE4E1; --green:#16794A;
+  --tower:#14213A; --tower-line:#25365A; --win-off:#22314F; --tower-ink:#C9D4E8;
+  --display:"Archivo",system-ui,sans-serif;
+  --body:"Instrument Sans",-apple-system,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#080D17; --surface:#101828; --surface2:#151F33; --ink:#E8EEF8; --muted:#8E9BB3; --line:#212D45;
+  --blue:#7C9DFF; --blue-ink:#071233; --blue-soft:#18264A; --grid:rgba(124,157,255,.09);
+  --brass:#E9B44C; --brass-soft:#2E2412; --brass-lit:#F2C46A;
+  --red:#FF8A80; --red-soft:#3A1715; --green:#5FD39A;
+  --tower:#0F1830; --tower-line:#22345C; --win-off:#1A2643; --tower-ink:#B7C4DE; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#080D17; --surface:#101828; --surface2:#151F33; --ink:#E8EEF8; --muted:#8E9BB3; --line:#212D45;
+  --blue:#7C9DFF; --blue-ink:#071233; --blue-soft:#18264A; --grid:rgba(124,157,255,.09);
+  --brass:#E9B44C; --brass-soft:#2E2412; --brass-lit:#F2C46A;
+  --red:#FF8A80; --red-soft:#3A1715; --green:#5FD39A;
+  --tower:#0F1830; --tower-line:#22345C; --win-off:#1A2643; --tower-ink:#B7C4DE; color-scheme:dark}
+
+html,body{height:100%}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;padding-bottom:env(safe-area-inset-bottom,0px);background:var(--paper);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.app{max-width:600px;margin:0 auto;min-height:100%}
+.gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* header */
+header{position:sticky;top:0;z-index:5;background:var(--paper);padding-block:calc(12px + env(safe-area-inset-top,0px)) 10px;border-bottom:1px solid transparent}
+header.scrolled{border-bottom-color:var(--line)}
+.brand{display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-stretch:125%;font-weight:800;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.brand i{font-style:normal;color:var(--blue)}
+h1{font-family:var(--display);font-stretch:112%;font-weight:800;font-size:32px;line-height:1.05;margin:6px 0 0;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);font-size:14px;margin-top:3px}
+main{display:flex;flex-direction:column;gap:16px;padding-block:8px 120px}
+
+/* type bits */
+.label{font-family:var(--display);font-stretch:118%;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.label b{font-family:var(--mono);letter-spacing:0;font-weight:500;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+/* hero */
+.hero{position:relative;border-radius:18px;overflow:hidden;background:var(--surface);border:1px solid var(--line);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:22px 22px;background-position:-1px -1px}
+.hero-in{padding:18px 16px 16px;display:flex;flex-direction:column;gap:14px}
+.hero .k{font-family:var(--display);font-stretch:125%;font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--blue)}
+.big{font-family:var(--display);font-stretch:125%;font-weight:900;font-size:clamp(44px,14vw,64px);line-height:.92;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.big small{font-size:.38em;font-weight:700;color:var(--muted);letter-spacing:0;margin-left:4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px dashed var(--line);padding-top:12px;gap:8px}
+.stat .v{font-family:var(--mono);font-weight:600;font-size:17px;font-variant-numeric:tabular-nums}
+.stat .n{font-size:12px;color:var(--muted);line-height:1.25}
+.dim{position:absolute;right:14px;top:16px;font-family:var(--mono);font-size:10px;color:var(--muted);writing-mode:vertical-rl;letter-spacing:.1em;opacity:.8}
+
+/* lists */
+.list{background:var(--surface);border-radius:16px;overflow:hidden;border:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border:0;border-top:1px solid var(--line);width:100%;background:none;text-align:left;cursor:pointer}
+.row:first-child{border-top:0}
+.row:active{background:var(--surface2)}
+.grow{flex:1;min-width:0}
+.name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{color:var(--muted);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.right{flex:none;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.empty{padding:18px 14px;color:var(--muted);font-size:15px}
+.av{flex:none;width:40px;height:40px;border-radius:12px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;font-family:var(--display);font-stretch:115%;font-weight:800;font-size:14px}
+.datechip{flex:none;width:44px;border-radius:10px;border:1px solid var(--line);text-align:center;overflow:hidden;background:var(--surface2)}
+.datechip .m{font-family:var(--display);font-stretch:125%;font-size:9px;font-weight:800;letter-spacing:.12em;background:var(--ink);color:var(--surface);padding:2px 0}
+.datechip .d{font-family:var(--mono);font-weight:600;font-size:17px;padding:2px 0 3px}
+.datechip.hot .m{background:var(--red)}
+.pill{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--blue-soft);color:var(--blue);white-space:nowrap}
+.pill.hot{background:var(--red-soft);color:var(--red)}
+.pill.gold{background:var(--brass-soft);color:var(--brass)}
+.tag{display:inline-block;font-family:var(--display);font-stretch:118%;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:5px;border:1px solid var(--line);color:var(--muted);vertical-align:1px}
+.fee{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+
+/* lease radar */
+.radar-bar{position:relative;height:6px;border-radius:3px;background:var(--surface2);margin-top:6px;overflow:hidden}
+.radar-bar span{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:var(--blue)}
+.radar-bar span.hot{background:var(--red)}
+.radar-scale{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);padding:8px 14px 10px;border-top:1px solid var(--line)}
+
+/* tower */
+.tower-wrap{display:flex;flex-direction:column;align-items:center;padding:18px 12px 0;border-radius:18px;background:var(--tower);color:var(--tower-ink);overflow:hidden;position:relative}
+.tower-wrap::before{content:"";position:absolute;inset:0;background-image:linear-gradient(var(--tower-line) 1px,transparent 1px),linear-gradient(90deg,var(--tower-line) 1px,transparent 1px);background-size:22px 22px;opacity:.35;pointer-events:none}
+.antenna{width:2px;height:22px;background:var(--tower-ink);position:relative;opacity:.7}
+.antenna::after{content:"";position:absolute;top:-4px;left:-3px;width:8px;height:8px;border-radius:50%;background:var(--red);animation:blink 2.4s infinite}
+@keyframes blink{50%{opacity:.25}}
+.tower{position:relative;width:min(100%,360px);display:flex;flex-direction:column}
+.crown{height:10px;margin:0 22%;background:var(--tower-line);border-radius:4px 4px 0 0}
+.floor{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--tower-line);border-top:0;background:rgba(255,255,255,.02);cursor:pointer;text-align:left;color:inherit}
+.floor:first-of-type{border-top:1px solid var(--tower-line)}
+.floor .fl{font-family:var(--display);font-stretch:118%;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;line-height:1.2}
+.floor .fl small{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:0;font-weight:500;opacity:.75;text-transform:none}
+.wins{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.win{aspect-ratio:3/4;border-radius:2px;background:var(--win-off);max-width:100%}
+.win.lit{background:var(--brass-lit);box-shadow:0 0 10px rgba(233,180,76,.45);animation:light .5s both}
+.win.lit.closed{background:#9FE3BE;box-shadow:0 0 10px rgba(95,211,154,.4)}
+@keyframes light{from{background:var(--win-off);box-shadow:none}}
+.lobby{display:flex;justify-content:space-between;align-items:center;width:min(100%,380px);margin-top:0;padding:10px 12px;border-top:3px solid var(--tower-ink);font-family:var(--mono);font-size:12px;position:relative}
+.lobby b{font-family:var(--display);font-stretch:125%;font-weight:900;font-size:20px;color:var(--brass-lit)}
+
+/* chips */
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px)));padding:0 max(16px,env(safe-area-inset-left,0px))}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.search{width:100%;box-sizing:border-box;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit}
+
+/* property cards */
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;text-align:left;cursor:pointer;width:100%}
+.ptop{display:flex;gap:12px;align-items:flex-start}
+.glyph{flex:none;width:44px;height:44px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);display:grid;place-items:center;color:var(--blue)}
+.glyph svg{width:26px;height:26px;stroke:currentColor;fill:none;stroke-width:1.6}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.metrics div{background:var(--surface2);padding:7px 6px;min-width:0}
+.metrics .n{font-family:var(--display);font-stretch:118%;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.metrics .v{font-family:var(--mono);font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* nav + fab */
+nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav .in{max-width:600px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+nav button{background:none;border:0;color:var(--muted);font-size:11px;font-weight:600;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+nav svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:1.7}
+nav button[aria-current="true"]{color:var(--blue)}
+.fab{position:fixed;z-index:7;right:max(16px,calc(env(safe-area-inset-right,0px) + 16px));bottom:calc(78px + env(safe-area-inset-bottom,0px));
+  height:52px;padding:0 20px 0 16px;border-radius:16px;border:0;background:var(--blue);color:var(--blue-ink);font-family:var(--display);font-stretch:118%;font-weight:800;font-size:13px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  box-shadow:0 10px 24px rgba(12,23,38,.25);display:flex;align-items:center;gap:8px}
+.fab svg{width:20px;height:20px;stroke:currentColor;stroke-width:2.4;fill:none}
+
+/* sheets */
+.sheet-bg{position:fixed;inset:0;z-index:20;background:rgba(5,10,20,.45);display:flex;align-items:flex-end;justify-content:center;animation:fade .18s}
+.sheet{background:var(--paper);width:100%;max-width:600px;max-height:93%;overflow-y:auto;border-radius:22px 22px 0 0;box-sizing:border-box;
+  padding-block:10px calc(24px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:14px;animation:up .24s cubic-bezier(.2,.8,.2,1)}
+.sheet>*{flex-shrink:0}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);align-self:center}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+@keyframes fade{from{opacity:0}}
+.sheet h2{font-family:var(--display);font-stretch:112%;font-weight:800;font-size:26px;line-height:1.08;margin:0;text-wrap:balance}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field input,.field select,.field textarea{padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;width:100%;box-sizing:border-box;min-width:0}
+.field input[type=number]{font-family:var(--mono)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.quick a{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:12px;background:var(--blue-soft);color:var(--blue);text-decoration:none;font-weight:600;font-size:13.5px}
+.quick svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:600;cursor:pointer;background:var(--blue);color:var(--blue-ink)}
+.btn.ghost{background:var(--blue-soft);color:var(--blue)}
+.btn.danger{background:none;color:var(--red);padding-inline:0}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.note time{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.note p{margin:2px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.steps{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.steps::-webkit-scrollbar{display:none}
+.step{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--muted)}
+.step.done{color:var(--ink)}
+.step[aria-pressed="true"]{background:var(--blue);border-color:var(--blue);color:var(--blue-ink)}
+.ledger{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ledger div{display:flex;justify-content:space-between;gap:10px;padding:9px 14px;border-top:1px dashed var(--line);font-size:14.5px}
+.ledger div:first-child{border-top:0}
+.ledger div span:last-child{font-family:var(--mono);font-weight:600;font-variant-numeric:tabular-nums}
+.ledger .total{background:var(--brass-soft);border-top:1px solid var(--line)}
+.ledger .total span:last-child{color:var(--brass);font-size:16px}
+.link{background:none;border:0;padding:0;color:var(--blue);font-weight:600;cursor:pointer;text-align:left}
+.banner{background:var(--brass-soft);color:var(--brass);border-radius:12px;padding:10px 12px;font-size:14px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.banner button{flex:none;background:none;border:1px solid currentColor;color:inherit;border-radius:8px;padding:4px 10px;font-size:13px;font-weight:600;cursor:pointer}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.card h3{margin:0;font-family:var(--display);font-stretch:112%;font-weight:800;font-size:18px}
+.card p{margin:0;color:var(--muted);font-size:14.5px}
+.out{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.out div{background:var(--surface2);border-radius:10px;padding:8px 10px;min-width:0}
+.out .n{font-size:11.5px;color:var(--muted)}
+.out .v{font-family:var(--mono);font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+textarea.backup{min-height:120px;font-family:var(--mono);font-size:11.5px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;animation:up .2s}
+.err{color:var(--red);font-size:14px}
+@media (max-width:370px){.metrics{grid-template-columns:repeat(2,1fr)}.out{grid-template-columns:1fr 1fr}.floor{grid-template-columns:82px 1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+
+<div class="app">
+  <header class="gutter" id="hdr"><div class="brand"><span>Pocket <i>CRM</i></span><span id="today-stamp"></span></div><h1 id="title">Today</h1><div class="sub" id="subtitle"></div></header>
+  <main class="gutter" id="main"></main>
+</div>
+<button class="fab" id="fab"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span id="fab-t">Add</span></button>
+<nav><div class="in" id="tabs">
+  <button data-tab="today"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Today</button>
+  <button data-tab="deals"><svg viewBox="0 0 24 24"><path d="M6 21V4h12v17M3 21h18M9 8h2M13 8h2M9 12h2M13 12h2M9 16h2M13 16h2"/></svg>Deals</button>
+  <button data-tab="props"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg>Properties</button>
+  <button data-tab="people"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.5-5.5 6.5-5.5s5.7 1.9 6.5 5.5M16 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c1.8.7 3 2.4 3.5 5.2"/></svg>People</button>
+  <button data-tab="tools"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2M12 11h0M14 11h2M8 15h2M12 15h0M14 15h2M8 18h2M14 18h2"/></svg>Tools</button>
+</div></nav>
+<div id="layer"></div>
+
+<script>
+const KEY='pocketcrm.cre.v1';
+const STAGES=[
+  {k:'prospect',n:'Prospect',p:.10},{k:'pitch',n:'Pitch / BOV',p:.20},{k:'market',n:'Marketing',p:.35},
+  {k:'loi',n:'LOI',p:.60},{k:'contract',n:'Under contract',p:.85},{k:'closed',n:'Closed',p:1},{k:'dead',n:'Dead',p:0}];
+const OPEN=['prospect','pitch','market','loi','contract'];
+const CLASSES=['Industrial','Office','Retail','Multifamily','Land','Medical','Hospitality'];
+const ROLES=['Owner','Tenant','Investor','Buyer','Broker','Lender','Attorney'];
+const DAY=86400000;
+const t0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+const iso=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const ms=s=>s?new Date(s+'T00:00').getTime():NaN;
+const daysTo=s=>Math.round((ms(s)-t0())/DAY);
+const uid=()=>Math.random().toString(36).slice(2,10);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>+v||0;
+const $k=v=>{v=num(v);const a=Math.abs(v);return a>=1e6?'$'+(v/1e6).toFixed(a>=1e7?1:2).replace(/\.?0+$/,'')+'M':a>=1e3?'$'+Math.round(v/1e3)+'K':'$'+Math.round(v)};
+const $full=v=>'$'+Math.round(num(v)).toLocaleString('en-US');
+const sf=v=>num(v)?num(v).toLocaleString('en-US')+' SF':'—';
+const pct=(v,d=2)=>isFinite(v)&&v?(v).toFixed(d)+'%':'—';
+const stage=k=>STAGES.find(s=>s.k===k)||STAGES[0];
+const mon=s=>new Date(ms(s)).toLocaleDateString('en-US',{month:'short'}).toUpperCase();
+const dnum=s=>new Date(ms(s)).getDate();
+const fmtDate=s=>s?new Date(ms(s)).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+const rel=n=>n<0?(-n)+'d late':n===0?'Today':n===1?'Tomorrow':n<60?'in '+n+'d':'in '+Math.round(n/30.4)+' mo';
+const initials=n=>String(n||'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('')||'?';
+
+/* ---------- sample book (clearly marked as examples) ---------- */
+function sample(){
+  const T=t0(), d=o=>iso(T+o*DAY), note=(o,text)=>({at:T+o*DAY+3.6e7,text}), X={example:true};
+  const c=(id,name,company,role,phone,email,extra)=>Object.assign({id,name,company,role,phone,email,followUp:'',notes:[]},X,extra);
+  const contacts=[
+    c('c1','Dana Whitfield','Whitfield Family Trust','Owner','(555) 201-4417','dana@whitfieldtrust.example',{followUp:d(0),notes:[note(-3,'Open to selling Ridgeview if pricing is near a 6.5 cap. Wants a BOV by end of month.')]}),
+    c('c2','Luis Ortega','Sunline Logistics','Tenant','(555) 330-9182','lortega@sunline.example',{leaseExp:d(150),sfOcc:42000,propertyId:'p1',followUp:d(-2),notes:[note(-20,'Outgrowing the space. Needs 60–75K SF with 32\' clear, dock-high.')]}),
+    c('c3','Priya Shah','Shah Capital','Investor','(555) 448-0076','priya@shahcap.example',{x1031:d(19),followUp:d(1),notes:[note(-5,'Sold a medical office in Aug. 1031 ID clock running. Wants NNN retail or light industrial, $4–8M.')]}),
+    c('c4','Marcus Bell','Meridian Office Partners','Owner','(555) 612-3390','mbell@meridianop.example',{followUp:d(3),notes:[note(-8,'Floor 4 vacancy after tenant downsized. Wants a leasing plan.')]}),
+    c('c5','Grace Kim','Kim & Arora LLP','Tenant','(555) 774-2201','gkim@kimarora.example',{leaseExp:d(330),sfOcc:6800,propertyId:'p2',followUp:d(12),notes:[note(-30,'Happy in the building but rent is up 18% at renewal. Open to tours.')]}),
+    c('c6','Ben Adeyemi','First Harbor Bank','Lender','(555) 902-1188','badeyemi@firstharbor.example',{notes:[note(-14,'Quoting 6.4% on stabilized industrial, 65% LTV.')]}),
+    c('c7','Tom Reyes','Corner Pharmacy Co.','Tenant','(555) 238-6650','treyes@cornerrx.example',{leaseExp:d(70),sfOcc:3200,propertyId:'p3',notes:[]}),
+  ];
+  const p=(id,name,address,cls,sfv,price,noi,ownerId,extra)=>Object.assign({id,name,address,cls,sf:sfv,price,noi,ownerId,notes:[]},X,extra);
+  const properties=[
+    p('p1','Ridgeview Commerce Center','4100 Ridgeview Pkwy','Industrial',84000,9800000,637000,'c1',{notes:[note(-3,'Two-tenant, 32\' clear, 12 docks. Built 2004.')]}),
+    p('p2','1420 Market Street','1420 Market St, Ste 100–600','Office',32500,7150000,486000,'c4'),
+    p('p3','Cypress Plaza','880 Cypress Ave','Retail',18200,5400000,372600,'',{notes:[note(-9,'Grocery-anchored strip next door. Two vacancies.')]}),
+    p('p4','Oak Hollow Apartments','212 Oak Hollow Dr','Multifamily',41000,8600000,520000,''),
+    p('p5','Hwy 9 Frontage','Hwy 9 & Mill Rd, 6.2 AC','Land',270000,1850000,0,''),
+  ];
+  const dl=(id,name,type,propertyId,clientId,stageK,value,feePct,extra)=>Object.assign({id,name,type,propertyId,clientId,stage:stageK,value,feePct,split:60,ddExp:'',closing:'',notes:[]},X,extra);
+  const deals=[
+    dl('d1','Ridgeview disposition','Sale','p1','c1','pitch',9800000,2.5,{notes:[note(-3,'BOV due. Comps at 6.25–6.75% cap.')]}),
+    dl('d2','Sunline relocation','Lease','','c2','loi',2950000,5,{notes:[note(-2,'LOI out on 68K SF at $6.25/SF NNN, 7 yrs.')]}),
+    dl('d3','Cypress Plaza acquisition','Sale','p3','c3','contract',5400000,2,{ddExp:d(9),closing:d(38),notes:[note(-1,'Phase I clean. Estoppels outstanding from 2 tenants.')]}),
+    dl('d4','1420 Market · 4th floor','Lease','p2','c4','market',1240000,6,{notes:[note(-6,'Flyer out. Two tours booked.')]}),
+    dl('d5','Kim & Arora renewal vs. move','Lease','p2','c5','prospect',780000,5),
+    dl('d6','Oak Hollow sale','Sale','p4','','closed',8600000,1.75,{closing:d(-41),notes:[note(-41,'Closed. 6.05% cap.')]}),
+    dl('d7','Hwy 9 land','Sale','p5','','dead',1850000,4,{notes:[note(-60,'Buyer walked over rezoning.')]}),
+  ];
+  return {contacts,properties,deals};
+}
+let db, storageOk=true;
+try{const raw=localStorage.getItem(KEY);db=raw?JSON.parse(raw):null}catch(e){storageOk=false}
+if(!db||!Array.isArray(db.deals))db=sample();
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){storageOk=false}};
+const C=id=>db.contacts.find(x=>x.id===id), P=id=>db.properties.find(x=>x.id===id), D=id=>db.deals.find(x=>x.id===id);
+
+/* ---------- money ---------- */
+const gross=d=>num(d.value)*num(d.feePct)/100;
+const mine=d=>gross(d)*num(d.split||100)/100;
+const weighted=d=>mine(d)*stage(d.stage).p;
+const capRate=p=>num(p.price)&&num(p.noi)?num(p.noi)/num(p.price)*100:NaN;
+const psf=p=>num(p.price)&&num(p.sf)?num(p.price)/num(p.sf):NaN;
+
+/* ---------- ui helpers ---------- */
+function toast(m){const el=document.createElement('div');el.className='toast';el.textContent=m;document.body.appendChild(el);setTimeout(()=>el.remove(),1900)}
+function head(t,s){document.getElementById('title').textContent=t;document.getElementById('subtitle').textContent=s||''}
+const ICON={
+  Industrial:'<path d="M3 20V10l5 3V10l5 3V7h3l1-3h2l1 3v13zM7 17h2M12 17h2"/>',
+  Office:'<path d="M6 20V4h12v16M9 7h2M13 7h2M9 10h2M13 10h2M9 13h2M13 13h2M11 20v-3h2v3M4 20h16"/>',
+  Retail:'<path d="M4 9l1-5h14l1 5M4 9h16v11H4zM4 9c0 1.5 1.3 2.5 2.7 2.5S9.3 10.5 9.3 9c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.3 2.5 2.6 2.5S20 10.5 20 9M10 20v-5h4v5"/>',
+  Multifamily:'<path d="M3 20V8l5-3 5 3v12M13 20V11h8v9M6 11h1M9 11h1M6 14h1M9 14h1M6 17h1M9 17h1M16 14h2M16 17h2M2 20h20"/>',
+  Land:'<path d="M3 19l5-7 4 4 3-4 6 7zM8 7a2 2 0 1 0 0-.01"/>',
+  Medical:'<path d="M5 20V6h14v14M10 10h4M12 8v4M10 20v-4h4v4M3 20h18"/>',
+  Hospitality:'<path d="M3 20V9h18v11M3 13h18M7 9V5h10v4M7 16h2M11 16h2M15 16h2"/>'};
+const glyph=cls=>`<span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24">${ICON[cls]||ICON.Office}</svg></span>`;
+function installHint(){
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  let dismissed=false;try{dismissed=localStorage.getItem('pocketcrm.hint')==='1'}catch(e){}
+  if(standalone||dismissed||!/iPhone|iPad/.test(navigator.userAgent))return '';
+  return `<div class="banner" style="background:var(--blue-soft);color:var(--blue)"><span>Install it: tap <b>Share</b>, then <b>Add to Home Screen</b>.</span><button id="hint-x">Got it</button></div>`;
+}
+const exBanner=()=>[...db.contacts,...db.properties,...db.deals].some(x=>x.example)
+  ?`<div class="banner"><span>You're looking at an example book of business.</span><button id="clr-ex">Clear examples</button></div>`:'';
+function clearExamples(){['contacts','properties','deals'].forEach(k=>db[k]=db[k].filter(x=>!x.example));save();toast('Examples cleared');render()}
+
+/* ---------- backups + home-screen badge ---------- */
+async function saveBackupFile(){
+  const name='pocket-crm-backup-'+iso(Date.now())+'.json';
+  const file=new File([JSON.stringify(db,null,1)],name,{type:'application/json'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Pocket CRM backup'});return}}
+  catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(file);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast('Backup saved');
+}
+const dueNow=()=>criticalDates(0).length;
+function updateBadge(){
+  if(!('setAppBadge' in navigator))return;
+  const n=dueNow();(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{});
+}
+function badgeCard(){
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+  if(!standalone||!('setAppBadge' in navigator)||!('Notification' in window))return '';
+  if(Notification.permission==='granted')return `<div class="card"><h3>Home-screen badge</h3><p>On. The app icon shows how many calls and deadlines are due today.</p></div>`;
+  return `<div class="card"><h3>Home-screen badge</h3><p>Show a red number on the app icon for calls and deadlines due today. iPhone asks for notification permission to do this.</p>
+    <div class="btns"><button class="btn" id="badge-on">Turn on badge</button></div></div>`;
+}
+
+/* ---------- critical dates ---------- */
+function criticalDates(windowDays){
+  const out=[];
+  db.deals.filter(d=>OPEN.includes(d.stage)).forEach(d=>{
+    if(d.ddExp)out.push({date:d.ddExp,what:'Due diligence expires',who:d.name,open:['deal',d.id],hard:true});
+    if(d.closing)out.push({date:d.closing,what:'Closing',who:d.name,open:['deal',d.id],hard:true});
+  });
+  db.contacts.forEach(c=>{
+    if(c.followUp)out.push({date:c.followUp,what:'Call '+c.name.split(' ')[0],who:c.company||c.role,open:['contact',c.id]});
+    if(c.x1031)out.push({date:c.x1031,what:'1031 ID deadline (45-day)',who:c.name,open:['contact',c.id],hard:true});
+  });
+  return out.filter(x=>daysTo(x.date)<=windowDays).sort((a,b)=>ms(a.date)-ms(b.date));
+}
+
+/* ---------- views ---------- */
+let tab='today', q='', dealFilter='All', classFilter='All', roleFilter='All';
+function render(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-current',b.dataset.tab===tab));
+  document.getElementById('today-stamp').textContent=new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+  const fab=document.getElementById('fab');fab.hidden=tab==='tools';
+  document.getElementById('fab-t').textContent={today:'Add',deals:'New deal',props:'Property',people:'Contact'}[tab]||'Add';
+  const m=document.getElementById('main');
+  m.innerHTML=VIEWS[tab]();
+  m.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const [k,id]=b.dataset.open.split(':');OPEN_SHEET[k](id)});
+  const ce=document.getElementById('clr-ex');if(ce)ce.onclick=clearExamples;
+  const hx=document.getElementById('hint-x');if(hx)hx.onclick=()=>{try{localStorage.setItem('pocketcrm.hint','1')}catch(e){}render()};
+  updateBadge();
+  BIND[tab]&&BIND[tab]();
+}
+const VIEWS={
+today(){
+  const open=db.deals.filter(d=>OPEN.includes(d.stage));
+  const w=open.reduce((s,d)=>s+weighted(d),0), full=open.reduce((s,d)=>s+mine(d),0);
+  const yr=new Date().getFullYear();
+  const closed=db.deals.filter(d=>d.stage==='closed'&&d.closing&&new Date(ms(d.closing)).getFullYear()===yr).reduce((s,d)=>s+mine(d),0);
+  const leases=db.contacts.filter(c=>c.leaseExp&&daysTo(c.leaseExp)>=0&&daysTo(c.leaseExp)<=730).sort((a,b)=>ms(a.leaseExp)-ms(b.leaseExp));
+  const crit=criticalDates(30);
+  head('Today',crit.filter(x=>daysTo(x.date)<=0).length+' due now · '+open.length+' live deals');
+  return installHint()+exBanner()+`
+  <section class="hero"><div class="hero-in">
+        <div class="k">Your pipeline GCI</div>
+    <div class="big">${$k(w)}</div><div class="sub" style="margin-top:-6px">Weighted by stage odds, after your split</div>
+    <div class="stats">
+      <div class="stat"><div class="v">${$k(full)}</div><div class="n">if every live deal closes</div></div>
+      <div class="stat"><div class="v">${$k(closed)}</div><div class="n">closed in ${yr}</div></div>
+      <div class="stat"><div class="v">${leases.filter(c=>daysTo(c.leaseExp)<=365).length}</div><div class="n">leases expiring within 12 mo</div></div>
+    </div></div></section>
+  <div class="label">Critical dates <b>next 30 days</b></div>
+  <div class="list">${crit.length?crit.map(x=>{const n=daysTo(x.date);return `
+    <button class="row" data-open="${x.open.join(':')}">
+      <span class="datechip${n<=3&&x.hard||n<0?' hot':''}"><div class="m">${mon(x.date)}</div><div class="d">${dnum(x.date)}</div></span>
+      <span class="grow"><div class="name">${esc(x.what)}</div><div class="meta">${esc(x.who)}</div></span>
+      <span class="pill${n<=0||(x.hard&&n<=10)?' hot':''}">${rel(n)}</span></button>`}).join(''):'<div class="empty">Clear runway. No calls or deadlines in the next 30 days.</div>'}</div>
+  <div class="label">Lease expiration radar <b>24 mo</b></div>
+  <div class="list">${leases.length?leases.map(c=>{const n=daysTo(c.leaseExp),pr=P(c.propertyId);return `
+    <button class="row" data-open="contact:${c.id}" style="flex-direction:column;align-items:stretch;gap:0">
+      <span style="display:flex;gap:12px;align-items:center"><span class="grow"><div class="name">${esc(c.company||c.name)}</div>
+        <div class="meta">${sf(c.sfOcc)}${pr?' · '+esc(pr.name):''}</div></span>
+        <span class="right"><span class="pill${n<=180?' hot':''}">${rel(n)}</span><span class="meta mono">${fmtDate(c.leaseExp)}</span></span></span>
+      <span class="radar-bar"><span class="${n<=180?'hot':''}" style="width:${Math.max(3,100-n/730*100)}%"></span></span></button>`}).join('')+
+    '<div class="radar-scale"><span>24 mo</span><span>12 mo</span><span>Expiry</span></div>':'<div class="empty">Add tenants with a lease expiration date to see who to call before they start touring.</div>'}</div>`;
+},
+deals(){
+  const live=db.deals.filter(d=>OPEN.includes(d.stage));
+  head('Deals',live.length+' live · '+$k(live.reduce((s,d)=>s+mine(d),0))+' potential GCI');
+  const floors=['closed',...OPEN.slice().reverse()].map(k=>{
+    const ds=db.deals.filter(d=>d.stage===k&&(dealFilter==='All'||d.type===dealFilter)), s=stage(k);
+    const fee=ds.reduce((a,d)=>a+(k==='closed'?mine(d):weighted(d)),0);
+    let i=0;const wins=Array.from({length:8},(_,j)=>`<span class="win${j<ds.length?' lit'+(k==='closed'?' closed':''):''}" style="animation-delay:${(OPEN.indexOf(k)+1)*120+j*60}ms"></span>`).join('');
+    return `<button class="floor" data-jump="${k}"><span class="fl">${s.n}<small>${ds.length} · ${$k(fee)}${k==='closed'?'':' wtd'}</small></span><span class="wins">${wins}</span></button>`;
+  }).join('');
+  const shown=db.deals.filter(d=>dealFilter==='All'||d.type===dealFilter);
+  const w=shown.filter(d=>OPEN.includes(d.stage)).reduce((s,d)=>s+weighted(d),0);
+  return `<div class="chips">${['All','Sale','Lease'].map(f=>`<button class="chip" data-df="${f}" aria-pressed="${f===dealFilter}">${f==='All'?'All deals':f+'s'}</button>`).join('')}</div>
+  <div class="tower-wrap"><div class="antenna"></div><div class="tower"><div class="crown"></div>${floors}</div>
+    <div class="lobby"><span>PIPELINE TOWER<br>lit window = live deal</span><b>${$k(w)}</b></div></div>`+
+  STAGES.map(s=>{const ds=shown.filter(d=>d.stage===s.k);if(!ds.length)return '';
+    return `<div class="label" id="g-${s.k}">${s.n} <b>${Math.round(s.p*100)}% odds</b></div><div class="list">${ds.map(dealRow).join('')}</div>`}).join('')||'<div class="empty">No deals yet. Tap New deal to start one.</div>';
+},
+props(){
+  const list=db.properties.filter(p=>classFilter==='All'||p.cls===classFilter);
+  const used=CLASSES.filter(c=>db.properties.some(p=>p.cls===c));
+  head('Properties',db.properties.length+' tracked · '+sf(db.properties.filter(p=>p.cls!=='Land').reduce((s,p)=>s+num(p.sf),0)).replace(' SF',' building SF'));
+  return `<div class="chips">${['All',...used].map(f=>`<button class="chip" data-cf="${f}" aria-pressed="${f===classFilter}">${f}</button>`).join('')}</div>`+
+  (list.length?list.map(p=>`<button class="pcard" data-open="prop:${p.id}">
+    <span class="ptop">${glyph(p.cls)}<span class="grow"><div class="name">${esc(p.name)}</div><div class="meta">${esc(p.address)}</div>
+      <div style="margin-top:4px"><span class="tag">${esc(p.cls)}</span>${C(p.ownerId)?` <span class="meta" style="display:inline">· ${esc(C(p.ownerId).name)}</span>`:''}</div></span></span>
+    <span class="metrics"><div><div class="n">${p.cls==='Land'?'Acres':'SF'}</div><div class="v">${num(p.sf)?(p.cls==='Land'?(num(p.sf)/43560).toFixed(1):Math.round(num(p.sf)/1000)+'K'):'—'}</div></div>
+      <div><div class="n">Price</div><div class="v">${num(p.price)?$k(p.price):'—'}</div></div>
+      <div><div class="n">$/SF</div><div class="v">${isFinite(psf(p))?'$'+psf(p).toFixed(0):'—'}</div></div>
+      <div><div class="n">Cap</div><div class="v">${pct(capRate(p))}</div></div></span></button>`).join(''):'<div class="empty">No properties in this class.</div>');
+},
+people(){
+  const ql=q.toLowerCase();
+  const list=db.contacts.filter(c=>(roleFilter==='All'||c.role===roleFilter)&&(!ql||[c.name,c.company,c.email,c.phone,c.role].join(' ').toLowerCase().includes(ql))).sort((a,b)=>a.name.localeCompare(b.name));
+  head('People',db.contacts.length+' contacts');
+  return `<input class="search" id="q" type="search" placeholder="Search name, company, phone" value="${esc(q)}" autocomplete="off">
+  <div class="chips">${['All',...ROLES.filter(r=>db.contacts.some(c=>c.role===r))].map(f=>`<button class="chip" data-rf="${f}" aria-pressed="${f===roleFilter}">${f==='All'?'Everyone':f+'s'}</button>`).join('')}</div>
+  <div class="list">${list.length?list.map(contactRow).join(''):'<div class="empty">No matches. Tap Contact to add someone.</div>'}</div>`;
+},
+tools(){
+  head('Tools','Deal math and backups');
+  return `<div class="card"><h3>Sale math</h3><p>Cap rate, price per foot, and what it's worth at the buyer's cap.</p>
+    <div class="two"><div class="field"><label class="label" for="m-price">Price ($)</label><input id="m-price" type="number" inputmode="decimal" value="9800000"></div>
+      <div class="field"><label class="label" for="m-noi">NOI ($/yr)</label><input id="m-noi" type="number" inputmode="decimal" value="637000"></div></div>
+    <div class="two"><div class="field"><label class="label" for="m-sf">Building SF</label><input id="m-sf" type="number" inputmode="numeric" value="84000"></div>
+      <div class="field"><label class="label" for="m-cap">Buyer's cap (%)</label><input id="m-cap" type="number" inputmode="decimal" step="0.05" value="6.25"></div></div>
+    <div class="out" id="m-out"></div></div>
+  <div class="card"><h3>Lease math</h3><p>Total consideration and your commission on a new lease.</p>
+    <div class="two"><div class="field"><label class="label" for="l-sf">SF</label><input id="l-sf" type="number" inputmode="numeric" value="68000"></div>
+      <div class="field"><label class="label" for="l-rate">Rate ($/SF/yr)</label><input id="l-rate" type="number" inputmode="decimal" step="0.05" value="6.25"></div></div>
+    <div class="two"><div class="field"><label class="label" for="l-term">Term (yrs)</label><input id="l-term" type="number" inputmode="numeric" value="7"></div>
+      <div class="field"><label class="label" for="l-esc">Annual bumps (%)</label><input id="l-esc" type="number" inputmode="decimal" step="0.25" value="3"></div></div>
+    <div class="two"><div class="field"><label class="label" for="l-fee">Commission (%)</label><input id="l-fee" type="number" inputmode="decimal" step="0.25" value="5"></div>
+      <div class="field"><label class="label" for="l-split">Your split (%)</label><input id="l-split" type="number" inputmode="numeric" value="60"></div></div>
+    <div class="out" id="l-out"></div></div>
+  ${badgeCard()}
+  <div class="card"><h3>Backup</h3><p>Everything lives on this phone. Copy a backup into Notes or email it to yourself every week or so.</p>
+    ${storageOk?'':'<div class="err">This browser is blocking storage, so changes vanish when you close the page. Copy a backup before leaving.</div>'}
+    <div class="btns"><button class="btn" id="save-file">Save backup file</button><button class="btn ghost" id="copy">Copy as text</button></div>
+    <div class="field"><textarea class="backup" id="out" readonly aria-label="Backup data">${esc(JSON.stringify(db))}</textarea></div>
+    <p>To restore, pick a backup file or paste backup text. It replaces everything in the app.</p>
+    <div class="btns"><label class="btn ghost" for="file-in" style="display:inline-block">Restore from file</label><input id="file-in" type="file" accept="application/json,.json,text/plain" hidden></div>
+    <div class="field"><textarea class="backup" id="in" placeholder="Paste backup text" aria-label="Paste backup"></textarea></div>
+    <div class="btns"><button class="btn ghost" id="restore">Restore</button>${[...db.contacts,...db.properties,...db.deals].some(x=>x.example)?'<button class="btn ghost" id="clr-ex">Clear examples</button>':''}</div></div>`;
+}};
+function dealRow(d){
+  const p=P(d.propertyId), c=C(d.clientId), next=[d.ddExp&&['DD',d.ddExp],d.closing&&['COE',d.closing]].filter(Boolean).filter(x=>daysTo(x[1])>=0)[0];
+  return `<button class="row" data-open="deal:${d.id}"><span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24">${ICON[p?p.cls:'Office']}</svg></span>
+    <span class="grow"><div class="name">${esc(d.name)}</div><div class="meta"><span class="tag">${d.type}</span> ${$k(d.value)}${c?' · '+esc(c.name):''}</div></span>
+    <span class="right"><span class="fee">${$k(d.stage==='closed'?mine(d):weighted(d))}</span>${next?`<span class="pill${daysTo(next[1])<=10?' hot':''}">${next[0]} ${rel(daysTo(next[1]))}</span>`:`<span class="meta mono">${d.stage==='closed'?'earned':d.stage==='dead'?'—':'wtd GCI'}</span>`}</span></button>`;
+}
+function contactRow(c){
+  const fu=c.followUp?daysTo(c.followUp):null, le=c.leaseExp?daysTo(c.leaseExp):null;
+  const pill=c.x1031&&daysTo(c.x1031)>=0?`<span class="pill hot">1031 ${rel(daysTo(c.x1031))}</span>`
+    :fu!==null&&fu<=0?`<span class="pill hot">Call ${fu===0?'today':rel(fu)}</span>`
+    :le!==null&&le>=0&&le<=365?`<span class="pill gold">Lease ${rel(le)}</span>`:'';
+  return `<button class="row" data-open="contact:${c.id}"><span class="av">${esc(initials(c.name))}</span>
+    <span class="grow"><div class="name">${esc(c.name)}</div><div class="meta">${esc([c.role,c.company].filter(Boolean).join(' · '))}</div></span>${pill?`<span class="right">${pill}</span>`:''}</button>`;
+}
+const BIND={
+  deals(){document.querySelectorAll('[data-df]').forEach(b=>b.onclick=()=>{dealFilter=b.dataset.df;render()});
+    document.querySelectorAll('[data-jump]').forEach(b=>b.onclick=()=>{const g=document.getElementById('g-'+b.dataset.jump);g&&g.scrollIntoView({behavior:'smooth',block:'start'})})},
+  props(){document.querySelectorAll('[data-cf]').forEach(b=>b.onclick=()=>{classFilter=b.dataset.cf;render()})},
+  people(){document.querySelectorAll('[data-rf]').forEach(b=>b.onclick=()=>{roleFilter=b.dataset.rf;render()});
+    const el=document.getElementById('q');el.oninput=e=>{q=e.target.value;const pos=el.selectionStart;render();const n=document.getElementById('q');n.focus();n.setSelectionRange(pos,pos)}},
+  tools(){
+    const v=id=>num(document.getElementById(id).value);
+    const calc=()=>{
+      const price=v('m-price'),noi=v('m-noi'),s=v('m-sf'),cap=v('m-cap');
+      document.getElementById('m-out').innerHTML=`<div><div class="n">Cap rate</div><div class="v">${price&&noi?pct(noi/price*100):'—'}</div></div>
+        <div><div class="n">Price / SF</div><div class="v">${price&&s?'$'+(price/s).toFixed(2):'—'}</div></div>
+        <div><div class="n">Value at ${cap||'—'}%</div><div class="v">${noi&&cap?$k(noi/(cap/100)):'—'}</div></div>`;
+      const lsf=v('l-sf'),rate=v('l-rate'),term=Math.round(v('l-term')),esc_=v('l-esc')/100,fee=v('l-fee'),split=v('l-split');
+      let tot=0;for(let y=0;y<term;y++)tot+=lsf*rate*Math.pow(1+esc_,y);
+      document.getElementById('l-out').innerHTML=`<div><div class="n">Consideration</div><div class="v">${$k(tot)}</div></div>
+        <div><div class="n">Gross fee</div><div class="v">${$k(tot*fee/100)}</div></div>
+        <div><div class="n">Your GCI</div><div class="v" style="color:var(--brass)">${$k(tot*fee/100*split/100)}</div></div>`;
+    };
+    document.querySelectorAll('.card input').forEach(i=>i.oninput=calc);calc();
+    document.getElementById('copy').onclick=()=>{const t=document.getElementById('out');
+      navigator.clipboard.writeText(t.value).then(()=>toast('Backup copied'),()=>{t.focus();t.select();toast('Text selected. Tap Copy.')})};
+    const restore=text=>{try{const d=JSON.parse(text);
+      if(!Array.isArray(d.deals)||!Array.isArray(d.contacts)||!Array.isArray(d.properties))throw 0;db=d;save();toast('Backup restored');render()}
+      catch(e){toast('That isn\'t a Pocket CRM backup')}};
+    document.getElementById('restore').onclick=()=>restore(document.getElementById('in').value);
+    document.getElementById('file-in').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(restore)};
+    document.getElementById('save-file').onclick=saveBackupFile;
+    const bb=document.getElementById('badge-on');if(bb)bb.onclick=()=>Notification.requestPermission().then(()=>{updateBadge();render()});
+  }
+};
+
+/* ---------- sheets ---------- */
+function sheet(html,bind){
+  const L=document.getElementById('layer');
+  L.innerHTML=`<div class="sheet-bg" id="bg"><div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div></div>`;
+  document.getElementById('bg').onclick=e=>{if(e.target.id==='bg')closeSheet()};
+  L.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const [k,id]=b.dataset.open.split(':');OPEN_SHEET[k](id)});
+  bind&&bind();
+}
+function closeSheet(){document.getElementById('layer').innerHTML='';render()}
+const notesBlock=(obj)=>`<div class="label">Activity</div>
+  <div class="field"><textarea id="nt" rows="2" placeholder="Log a call, tour, or update" aria-label="New note"></textarea></div>
+  <div class="btns"><button class="btn" id="addn">Log it</button></div>
+  ${obj.notes.length?obj.notes.slice().sort((a,b)=>b.at-a.at).map(n=>`<div class="note"><time>${new Date(n.at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</time><p>${esc(n.text)}</p></div>`).join(''):'<div class="meta">Nothing logged yet.</div>'}`;
+function bindNotes(obj,reopen){document.getElementById('addn').onclick=()=>{const t=document.getElementById('nt').value.trim();if(!t)return;obj.notes.push({at:Date.now(),text:t});save();toast('Logged');reopen()}}
+const closeBtns=(editFn)=>`<div class="btns"><button class="btn ghost" id="edit">Edit</button><button class="btn ghost" id="done">Done</button></div>`;
+function bindClose(editFn){document.getElementById('edit').onclick=editFn;document.getElementById('done').onclick=closeSheet}
+
+const OPEN_SHEET={
+deal(id){
+  const d=D(id);if(!d)return;const p=P(d.propertyId),c=C(d.clientId),s=stage(d.stage);
+  sheet(`<div><span class="tag">${d.type}</span> <span class="tag">${esc(p?p.cls:'—')}</span></div><h2>${esc(d.name)}</h2>
+    <div class="meta" style="white-space:normal">${p?`<button class="link" data-open="prop:${p.id}">${esc(p.name)}</button>`:'No property linked'}${c?` · client <button class="link" data-open="contact:${c.id}">${esc(c.name)}</button>`:''}</div>
+    <div class="label">Stage <b>${Math.round(s.p*100)}% odds</b></div>
+    <div class="steps">${STAGES.map((x,i)=>`<button class="step${STAGES.indexOf(s)>i?' done':''}" data-st="${x.k}" aria-pressed="${x.k===d.stage}">${x.n}</button>`).join('')}</div>
+    <div class="ledger">
+      <div><span>${d.type==='Sale'?'Sale price':'Total lease consideration'}</span><span>${$full(d.value)}</span></div>
+      <div><span>Commission</span><span>${num(d.feePct)}%</span></div>
+      <div><span>Gross fee</span><span>${$full(gross(d))}</span></div>
+      <div><span>Your split</span><span>${num(d.split)}%</span></div>
+      <div><span>Your GCI</span><span>${$full(mine(d))}</span></div>
+      <div class="total"><span>${d.stage==='closed'?'Earned':'Weighted at '+Math.round(s.p*100)+'%'}</span><span>${$full(d.stage==='closed'?mine(d):weighted(d))}</span></div></div>
+    <div class="two"><div class="field"><label class="label" for="dd">DD expires</label><input id="dd" type="date" value="${esc(d.ddExp)}"></div>
+      <div class="field"><label class="label" for="coe">Closing</label><input id="coe" type="date" value="${esc(d.closing)}"></div></div>
+    ${notesBlock(d)}${closeBtns()}`,
+  ()=>{
+    document.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{d.stage=b.dataset.st;delete d.example;save();if(d.stage==='closed')toast('Closed. Nice work.');OPEN_SHEET.deal(id)});
+    document.getElementById('dd').onchange=e=>{d.ddExp=e.target.value;save()};
+    document.getElementById('coe').onchange=e=>{d.closing=e.target.value;save()};
+    bindNotes(d,()=>OPEN_SHEET.deal(id));bindClose(()=>editForm('deal',d));
+  });
+},
+prop(id){
+  const p=P(id);if(!p)return;const o=C(p.ownerId), tenants=db.contacts.filter(c=>c.propertyId===p.id&&c.role==='Tenant'), ds=db.deals.filter(d=>d.propertyId===p.id);
+  sheet(`<div class="ptop">${glyph(p.cls)}<span class="grow"><h2>${esc(p.name)}</h2><div class="meta" style="white-space:normal">${esc(p.address)}</div></span></div>
+    <div class="ledger">
+      <div><span>Class</span><span>${esc(p.cls)}</span></div>
+      <div><span>${p.cls==='Land'?'Land area':'Building size'}</span><span>${p.cls==='Land'&&num(p.sf)?(num(p.sf)/43560).toFixed(2)+' AC':sf(p.sf)}</span></div>
+      <div><span>Price</span><span>${num(p.price)?$full(p.price):'—'}</span></div>
+      <div><span>NOI</span><span>${num(p.noi)?$full(p.noi):'—'}</span></div>
+      <div><span>Price / SF</span><span>${isFinite(psf(p))?'$'+psf(p).toFixed(2):'—'}</span></div>
+      <div class="total"><span>Cap rate</span><span>${pct(capRate(p))}</span></div></div>
+    <div class="label">Owner</div>
+    <div class="list">${o?contactRow(o):'<div class="empty">No owner linked. Edit to add one.</div>'}</div>
+    ${tenants.length?`<div class="label">Tenants <b>${sf(tenants.reduce((a,t)=>a+num(t.sfOcc),0))}</b></div><div class="list">${tenants.map(contactRow).join('')}</div>`:''}
+    ${ds.length?`<div class="label">Deals</div><div class="list">${ds.map(dealRow).join('')}</div>`:''}
+    ${notesBlock(p)}${closeBtns()}`,
+  ()=>{bindNotes(p,()=>OPEN_SHEET.prop(id));bindClose(()=>editForm('prop',p))});
+},
+contact(id){
+  const c=C(id);if(!c)return;const p=P(c.propertyId), digits=(c.phone||'').replace(/[^\d+]/g,'');
+  const ds=db.deals.filter(d=>d.clientId===c.id), owned=db.properties.filter(x=>x.ownerId===c.id);
+  sheet(`<div style="display:flex;gap:12px;align-items:center"><span class="av" style="width:54px;height:54px;font-size:18px;border-radius:16px">${esc(initials(c.name))}</span>
+      <div class="grow"><span class="tag">${esc(c.role)}</span><h2>${esc(c.name)}</h2><div class="meta">${esc(c.company)}</div></div></div>
+    <div class="quick">
+      <a href="tel:${esc(digits)}"><svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg>Call</a>
+      <a href="sms:${esc(digits)}"><svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>Text</a>
+      <a href="mailto:${esc(c.email)}"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>Email</a></div>
+    <div class="meta mono" style="white-space:normal;user-select:text">${esc(c.phone)}${c.email?'<br>'+esc(c.email):''}</div>
+    <div class="two"><div class="field"><label class="label" for="fu">Next call</label><input id="fu" type="date" value="${esc(c.followUp)}"></div>
+      ${c.role==='Investor'||c.x1031?`<div class="field"><label class="label" for="x1031">1031 ID deadline</label><input id="x1031" type="date" value="${esc(c.x1031||'')}"></div>`
+       :`<div class="field"><label class="label" for="le">Lease expires</label><input id="le" type="date" value="${esc(c.leaseExp||'')}"></div>`}</div>
+    ${c.leaseExp||c.sfOcc||p?`<div class="ledger">${p?`<div><span>Location</span><span><button class="link" data-open="prop:${p.id}">${esc(p.name)}</button></span></div>`:''}
+      ${c.sfOcc?`<div><span>Occupies</span><span>${sf(c.sfOcc)}</span></div>`:''}${c.leaseExp?`<div class="total"><span>Lease expires</span><span>${fmtDate(c.leaseExp)} · ${rel(daysTo(c.leaseExp))}</span></div>`:''}</div>`:''}
+    ${owned.length?`<div class="label">Owns</div><div class="list">${owned.map(x=>`<button class="row" data-open="prop:${x.id}">${glyph(x.cls)}<span class="grow"><div class="name">${esc(x.name)}</div><div class="meta">${esc(x.cls)} · ${sf(x.sf)}</div></span></button>`).join('')}</div>`:''}
+    ${ds.length?`<div class="label">Deals</div><div class="list">${ds.map(dealRow).join('')}</div>`:''}
+    ${notesBlock(c)}${closeBtns()}`,
+  ()=>{
+    document.getElementById('fu').onchange=e=>{c.followUp=e.target.value;save()};
+    const le=document.getElementById('le');if(le)le.onchange=e=>{c.leaseExp=e.target.value;save()};
+    const x=document.getElementById('x1031');if(x)x.onchange=e=>{c.x1031=e.target.value;save()};
+    bindNotes(c,()=>OPEN_SHEET.contact(id));bindClose(()=>editForm('contact',c));
+  });
+}};
+
+/* ---------- forms ---------- */
+const opts=(arr,cur,blank)=>(blank?`<option value="">${blank}</option>`:'')+arr.map(([v,n])=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(n)}</option>`).join('');
+const SCHEMA={
+  deal:()=>[['name','Deal name','text',1],['type','Type','select',0,[['Sale','Sale'],['Lease','Lease']]],['stage','Stage','select',0,STAGES.map(s=>[s.k,s.n])],
+    ['propertyId','Property','select',1,db.properties.map(p=>[p.id,p.name]),'None'],['clientId','Client','select',1,db.contacts.map(c=>[c.id,c.name+' · '+c.role]),'None'],
+    ['value','Price or total lease $','number',1],['feePct','Commission %','number'],['split','Your split %','number'],['ddExp','DD expires','date'],['closing','Closing','date']],
+  prop:()=>[['name','Property name','text',1],['address','Address','text',1],['cls','Asset class','select',0,CLASSES.map(c=>[c,c])],['sf','Building SF (land: SF of land)','number'],
+    ['price','Price / value ($)','number'],['noi','NOI ($/yr)','number'],['ownerId','Owner','select',1,db.contacts.map(c=>[c.id,c.name]),'None']],
+  contact:()=>[['name','Name','text',1],['company','Company','text',1],['role','Role','select',0,ROLES.map(r=>[r,r])],['phone','Phone','tel'],['email','Email','email',1],
+    ['propertyId','Property (tenants)','select',1,db.properties.map(p=>[p.id,p.name]),'None'],['sfOcc','SF occupied','number'],['leaseExp','Lease expires','date'],['x1031','1031 ID deadline','date'],['followUp','Next call','date']]
+};
+const BLANK={
+  deal:()=>({id:uid(),name:'',type:'Sale',stage:'prospect',propertyId:'',clientId:'',value:'',feePct:3,split:60,ddExp:'',closing:'',notes:[]}),
+  prop:()=>({id:uid(),name:'',address:'',cls:'Industrial',sf:'',price:'',noi:'',ownerId:'',notes:[]}),
+  contact:()=>({id:uid(),name:'',company:'',role:'Owner',phone:'',email:'',propertyId:'',sfOcc:'',leaseExp:'',x1031:'',followUp:iso(t0()+2*DAY),notes:[]})
+};
+const COLL={deal:'deals',prop:'properties',contact:'contacts'}, NOUN={deal:'deal',prop:'property',contact:'contact'};
+function editForm(kind,obj){
+  const isNew=!obj;obj=obj||BLANK[kind]();
+  const f=SCHEMA[kind](); let html='',half=[];
+  const fieldHtml=([k,label,type,wide,choices,blank])=>{const id='f-'+k,v=obj[k]??'';
+    const ctl=type==='select'?`<select id="${id}">${opts(choices,v,blank)}</select>`
+      :`<input id="${id}" type="${type}" value="${esc(v)}"${type==='number'?' inputmode="decimal" step="any"':''}${k==='name'?' autocomplete="off"':''}>`;
+    return `<div class="field"><label class="label" for="${id}">${label}</label>${ctl}</div>`};
+  f.forEach(x=>{if(x[3]){if(half.length){html+=`<div class="two">${half.map(fieldHtml).join('')}<div></div></div>`;half=[]}html+=fieldHtml(x)}
+    else{half.push(x);if(half.length===2){html+=`<div class="two">${half.map(fieldHtml).join('')}</div>`;half=[]}}});
+  if(half.length)html+=`<div class="two">${half.map(fieldHtml).join('')}<div></div></div>`;
+  sheet(`<h2>${isNew?'New '+NOUN[kind]:'Edit '+NOUN[kind]}</h2>${html}
+    <div class="err" id="err" hidden>Give it a name so you can find it later.</div>
+    <div class="btns"><button class="btn" id="save">${isNew?'Add '+NOUN[kind]:'Save changes'}</button><button class="btn ghost" id="cancel">Cancel</button></div>
+    ${isNew?'':`<div id="delwrap"><button class="btn danger" id="del">Delete ${NOUN[kind]}</button></div>`}`,
+  ()=>{
+    document.getElementById('save').onclick=()=>{
+      const vals={};f.forEach(([k,,type])=>{const raw=document.getElementById('f-'+k).value.trim();vals[k]=type==='number'?(raw===''?'':+raw):raw});
+      if(!vals.name){document.getElementById('err').hidden=false;return}
+      Object.assign(obj,vals);delete obj.example;if(isNew)db[COLL[kind]].push(obj);save();toast(isNew?'Added':'Saved');OPEN_SHEET[kind](obj.id);
+    };
+    document.getElementById('cancel').onclick=()=>isNew?closeSheet():OPEN_SHEET[kind](obj.id);
+    const del=document.getElementById('del');
+    if(del)del.onclick=()=>{document.getElementById('delwrap').innerHTML=`<div class="btns"><span class="meta" style="align-self:center;white-space:normal">Delete ${esc(obj.name)} for good?</span><button class="btn danger" id="yes">Yes, delete</button></div>`;
+      document.getElementById('yes').onclick=()=>{db[COLL[kind]]=db[COLL[kind]].filter(x=>x.id!==obj.id);save();toast('Deleted');closeSheet()}};
+  });
+}
+function addChooser(){
+  sheet(`<h2>Add to your book</h2><div class="list">
+    <button class="row" id="a-deal"><span class="av">$</span><span class="grow"><div class="name">New deal</div><div class="meta">A listing, buyer rep, or lease assignment</div></span></button>
+    <button class="row" id="a-prop">${glyph('Office')}<span class="grow"><div class="name">Property</div><div class="meta">A building or site you're tracking</div></span></button>
+    <button class="row" id="a-contact"><span class="av">+</span><span class="grow"><div class="name">Contact</div><div class="meta">Owner, tenant, investor, lender</div></span></button></div>`,
+  ()=>{['deal','prop','contact'].forEach(k=>document.getElementById('a-'+k).onclick=()=>editForm(k))});
+}
+
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();window.scrollTo(0,0)});
+document.getElementById('fab').onclick=()=>({today:addChooser,deals:()=>editForm('deal'),props:()=>editForm('prop'),people:()=>editForm('contact')}[tab]||addChooser)();
+window.addEventListener('scroll',()=>document.getElementById('hdr').classList.toggle('scrolled',scrollY>4),{passive:true});
+render();
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
+if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)render()});
+</script>
+</body>
+</html>
